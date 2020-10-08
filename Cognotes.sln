@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30523.141
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cognotes", "Cognotes\Cognotes.csproj", "{FD80986B-7C15-4952-AEC4-C3E7BF9FA4B9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FD80986B-7C15-4952-AEC4-C3E7BF9FA4B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD80986B-7C15-4952-AEC4-C3E7BF9FA4B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD80986B-7C15-4952-AEC4-C3E7BF9FA4B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD80986B-7C15-4952-AEC4-C3E7BF9FA4B9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {88BFD985-A96B-4447-8632-E65493F549A3}
+	EndGlobalSection
+EndGlobal

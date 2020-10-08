@@ -1,0 +1,16 @@
+﻿<Window x:Class="Cognotes.CogNotesMainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Cognotes"
+        mc:Ignorable="d"
+        Topmost="True"
+        Title="CogNotes" Height="450" Width="800">
+    <StackPanel Orientation="Horizontal" MinWidth="100">
+        <StackPanel Orientation="Vertical" MinWidth="250">
+            <Label>Note Stream X</Label>
+            <TextBox>This is a </TextBox>
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -74,7 +74,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ChangeNotifier.cs" />
+    <Compile Include="Cmd.cs" />
+    <Compile Include="CogNotesViewModel.cs" />
+    <Compile Include="NoteStreamEditorViewModel.cs" />
+    <Compile Include="NoteViewModel.cs" />
     <Compile Include="PropertyChangedHandler.cs" />
+    <Compile Include="Subtracting.cs" />
     <Page Include="CogNotes.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

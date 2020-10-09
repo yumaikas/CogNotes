@@ -8,7 +8,7 @@ namespace Cognotes
 {
     public class Note
     {
-        public int? Id { get; set; }
+        public long? Id { get; set; }
         public string Content { get; set; }
         public string Tagline { get; set; }
         public DateTime Created { get; set; }

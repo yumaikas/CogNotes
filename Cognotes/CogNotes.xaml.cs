@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -22,56 +19,65 @@ namespace Cognotes
     /// </summary>
     public partial class CogNotesMainWindow : Window
     {
-        NoteRepository db = new NoteRepository(@"Data Source=C:\temp\cognotes.db");
+        NoteRepository db;
+        CogNotesViewModel vm;
+        static string homeFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+        Cmd addNoteCol;
         public CogNotesMainWindow()
         {
+            db = new NoteRepository($@"Data Source={System.IO.Path.Combine(homeFolder, "cognotes.db")}");
             db.CreateTables();
             InitializeComponent();
-        }
-    }
-
-    public class ChangeNotifier: INotifyPropertyChanged
-    {
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void OnPropertyChanged(string propertyName)
-           => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
-            field = value;
-            OnPropertyChanged(propertyName);
-            return true;
-        }
-    }
-    public class NoteViewModel: ChangeNotifier
-    {
-        public NoteViewModel(Note n)
-        {
-            throw new NotImplementedException("TOOOOODOOOOO!");
-        }
-    }
-    public class NoteStreamEditorViewModel: ChangeNotifier
-    {
-        NoteRepository db;
-        public NoteStreamEditorViewModel(NoteRepository db)
-        {
-            this.db = db;
-        }
-        private string draftNotes;
-        public string DraftNotes { get => draftNotes; set => SetField(ref draftNotes, value); }
-        private string searchTerms;
-        public string SearchTerms { get => searchTerms;
-            set  { 
-                if(SetField(ref searchTerms, value)) {
-                    SetField(ref searchResults, db.SearchNotes(value).Select(n =>new NoteViewModel(n)).Take(5).ToList());
+            this.DataContext = vm = new CogNotesViewModel(db);
+            addNoteCol = new Cmd(AddNoteCol, () => vm.NoteStreams.Count < 5);
+            if (File.Exists(topicsPath()))
+            {
+                foreach (string topic in File.ReadAllLines(topicsPath()).Take(4))
+                {
+                    string[] elems = topic.Split('\x1f');
+                    if (elems.Length != 2) { 
+                        vm.AddNoteStream(new NoteStreamEditorViewModel(db, topic, addNoteCol, getRemoveCommand) {
+                            SearchTerms = topic
+                        });
+                    } else
+                    {
+                        vm.AddNoteStream(new NoteStreamEditorViewModel(db, elems[0], addNoteCol, getRemoveCommand) {
+                            SearchTerms = elems[1]
+                        });
+                    }
                 }
-            } 
+            }
+            if (vm.NoteStreams.Count() == 0) {
+                vm.AddNoteStream(new NoteStreamEditorViewModel(db, "Notes", addNoteCol, getRemoveCommand) {
+                    SearchTerms = "",
+                });
+            }
+            this.Closing += CogNotesMainWindow_Closing;
+        }
+        private string topicsPath() => System.IO.Path.Combine(homeFolder, ".cognos_topics.txt");
+
+        private void CogNotesMainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            File.WriteAllLines(
+                topicsPath(),
+                vm.NoteStreams.Select(x => x.Title + "\x1f" + x.SearchTerms));
         }
 
-        private List<NoteViewModel> searchResults;
-        public List<NoteViewModel> SearchResults { get => searchResults; set => SetField(ref searchResults, value); }
+        private Cmd getRemoveCommand(NoteStreamEditorViewModel toRemove)
+        {
+            return new Cmd(() => RemoveNoteCol(toRemove), () => vm.NoteStreams.Count > 1);
+        }
+
+        private void RemoveNoteCol(NoteStreamEditorViewModel colToRemove)
+        {
+            vm.RemoveNoteStream(colToRemove);
+        }
+
+        private void AddNoteCol()
+        {
+            vm.AddNoteStream(new NoteStreamEditorViewModel(db, $"Notes {vm.NoteStreams.Count}", addNoteCol, getRemoveCommand) {
+                SearchTerms = ""
+            });
+        }
     }
 }

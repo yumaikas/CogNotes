@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SQLite;
+using System.Data;
 
 namespace Cognotes
 {
     public class NoteRepository
     {
+        public Action OnNoteSaved;
         string dbpath;
         public NoteRepository(string dbpath)
         {
@@ -19,35 +21,51 @@ namespace Cognotes
         {
             using(SQLiteConnection conn = new SQLiteConnection(dbpath))
             using (SQLiteCommand cmd = conn.CreateCommand()) {
+                conn.Open();
                 cmd.CommandText = @"
                     Select NoteId as Id, Content, Tagline, Created, Updated
                     from Notes
                     where
-                        Content like '%' || @searchTerms || '%'
-                        AND Content not like '%@archive%'
+                        (Content like '%' || @searchTerms || '%'
+                        OR Tagline like '%' || @searchTerms || '%')
+                        and (
+                            @searchTerms like '%archive%'
+                            OR
+                            (Content not like '%@archive%'
+                            AND Tagline not like '%@archive%'))
                     order by Created DESC
                 ";
                 cmd.Parameters.AddWithValue("@searchTerms", searchTerms);
 
                 using (var reader = cmd.ExecuteReader()) {
                     while (reader.Read()) {
-                        yield return new Note() { 
-                            Id = (int)reader["Id"],
-                            Content = (string)reader["Content"],
-                            Tagline = (string)reader["Tagline"],
-                            Created = DateTimeOffset.FromUnixTimeSeconds((int?)reader["Created"] ?? 0).LocalDateTime,
-                            Updated = DateTimeOffset.FromUnixTimeSeconds((int?)reader["Updated"]?? 0).LocalDateTime
-                        };
+                        var n = new Note();
+                        n.Id = (long)reader["Id"];
+                        n.Content = (string)reader["Content"];
+                        n.Tagline = (string)reader["Tagline"];
+                        n.Created = DateTimeOffset.FromUnixTimeSeconds(IfNull(reader, "Created", 0)).LocalDateTime;
+                        n.Updated = DateTimeOffset.FromUnixTimeSeconds(IfNull(reader, "Updated", 0)).LocalDateTime;
+                        yield return n;
                     }
                 }
             }
         }
 
-        public async Task<int> SaveNote(Note n)
+        private T IfNull<T>(IDataReader dr, string Key, T fallback)
         {
+            if(dr.IsDBNull(dr.GetOrdinal(Key))) {
+                return fallback;
+            }
+            return (T)dr[Key];
+        }
+
+        public long SaveNote(Note n)
+        {
+            long retval;
             using (SQLiteConnection conn = new SQLiteConnection(dbpath))
             using (SQLiteCommand cmd = conn.CreateCommand())
             {
+                conn.Open();
                 if (n.Id.HasValue) { 
                     // Save note
                     cmd.CommandText = @"
@@ -61,13 +79,15 @@ namespace Cognotes
                                 Content = @content,
                                 Tagline = @tagline,
                                 Updated = strftime('%s', 'now')
-                        where NoteID = ?
+                        where NoteID = @note_id;
+                        Select @note_id;
                     ";
 
                     cmd.Parameters.AddWithValue("@content", n.Content);
                     cmd.Parameters.AddWithValue("@tagline", n.Tagline);
                     cmd.Parameters.AddWithValue("@note_id", n.Id.Value);
-                    return (int)await cmd.ExecuteScalarAsync();
+                    OnNoteSaved?.Invoke();
+                    retval = (long)cmd.ExecuteScalar();
                 } else
                 {
                     // Create note
@@ -78,15 +98,18 @@ namespace Cognotes
                     ";
                     cmd.Parameters.AddWithValue("@content", n.Content);
                     cmd.Parameters.AddWithValue("@tagline", n.Tagline);
-                    return (int)await cmd.ExecuteScalarAsync();
+                    retval = (long)cmd.ExecuteScalar();
                 }
             }
+            OnNoteSaved?.Invoke();
+            return retval;
         }
 
         public void CreateTables() { 
             using(SQLiteConnection conn = new SQLiteConnection(dbpath))
             using(SQLiteCommand cmd = conn.CreateCommand())
             {
+                conn.Open();
                 cmd.CommandText = @"
                     Create Table If Not Exists Notes (
                         NoteId INTEGER PRIMARY KEY,

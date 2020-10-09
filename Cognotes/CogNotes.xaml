@@ -3,14 +3,95 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:Cognotes"
         mc:Ignorable="d"
         Topmost="True"
-        Title="CogNotes" Height="450" Width="800">
-    <StackPanel Orientation="Horizontal" MinWidth="100">
-        <StackPanel Orientation="Vertical" MinWidth="250">
-            <Label>Note Stream X</Label>
-            <TextBox>This is a </TextBox>
-        </StackPanel>
-    </StackPanel>
+        Title="CogNotes" Height="450" Width="800" x:Name="Window">
+    <Window.Resources>
+        <local:Subtracting x:Key="sub"></local:Subtracting>
+        <local:CollapseIf x:Key="CollapseIf"></local:CollapseIf>
+    </Window.Resources>
+    <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Disabled">
+        <ItemsControl ItemsSource="{Binding Path=NoteStreams}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"></StackPanel>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <ScrollViewer>
+                        <ScrollViewer.Height>
+                            <Binding
+                                    ElementName="Window"
+                                    Path="ActualHeight"
+                                    Converter="{StaticResource sub}" >
+                                <Binding.ConverterParameter>
+                                    <sys:Double>40</sys:Double>
+                                </Binding.ConverterParameter>
+                            </Binding>
+                        </ScrollViewer.Height>
+                        <Grid MaxWidth="500">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="2*"></RowDefinition>
+                                <RowDefinition Height="5*"></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <StackPanel MinWidth="250" Grid.Row="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox MinWidth="30" FontWeight="Bold" VerticalAlignment="Center" Text="{Binding Path=Title}"></TextBox>
+                                    <Button Margin="3,1" HorizontalAlignment="Right" Command="{Binding Path=NewNoteCol}">(+ Column)</Button>
+                                    <Button Margin="3, 1" Command="{Binding Path=RemoveNoteCol}">(- Column)</Button>
+                                </StackPanel>
+                                <DockPanel>
+                                    <Label>Search Terms:</Label>
+                                    <TextBox VerticalAlignment="Center" Margin="0,0,10,0" MinWidth="250" Text="{Binding Path=SearchTerms, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                </DockPanel>
+                                <Label>Note:</Label>
+                                <TextBox 
+                                  MinHeight="40"
+                                  Name="tbMultiLine"
+                                  TextWrapping="Wrap"
+                                  AcceptsReturn="True"
+                                  VerticalScrollBarVisibility="Auto"
+                                    Text="{Binding Path=DraftNotes, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                <DockPanel Margin="0,5,0,0">
+                                    <Label>Tagline:</Label>
+                                    <TextBox Height="22" Text="{Binding Path=DraftTagline, UpdateSourceTrigger=PropertyChanged}"></TextBox>
+                                </DockPanel>
+                                <Button Margin="5, 5" Command="{Binding Path=SaveNote}">Add Note</Button>
+                                <Separator Margin="0,0,0,10"></Separator>
+                            </StackPanel>
+                            <!-- Height binding copied from Stack Overflow: https://stackoverflow.com/a/1133232/823592-->
+                            <ItemsControl ItemsSource="{Binding Path=SearchResults}" ScrollViewer.CanContentScroll="True" Grid.Row="1">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <StackPanel Visibility="{Binding Path=IsNotEditing, Converter={StaticResource CollapseIf}}" >
+                                                <TextBlock TextWrapping="Wrap" Text="{Binding Path=Content}"></TextBlock>
+                                                <TextBlock TextWrapping="Wrap" Text="{Binding Path=Tagline}"></TextBlock>
+                                            </StackPanel>
+                                            <StackPanel Visibility="{Binding Path=IsEditing, Converter={StaticResource CollapseIf}}">
+                                                <Label>Note:</Label>
+                                                <TextBox 
+                                                  MinHeight="40"
+                                                  TextWrapping="Wrap"
+                                                  AcceptsReturn="True"
+                                                  VerticalScrollBarVisibility="Auto"
+                                                    Text="{Binding Path=Content}"></TextBox>
+                                                <Label>Tagline:</Label>
+                                                <TextBox Text="{Binding Path=Tagline}"></TextBox>
+                                            </StackPanel>
+                                            <Button HorizontalAlignment="Left" MinWidth="100" Margin="10, 2" Content="{Binding Path=ButtonText}" Command="{Binding Path=EditOrSaveNote, UpdateSourceTrigger=PropertyChanged}"></Button>
+                                            <Separator></Separator>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </ScrollViewer>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </ScrollViewer>
 </Window>

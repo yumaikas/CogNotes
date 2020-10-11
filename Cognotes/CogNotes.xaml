@@ -78,9 +78,9 @@
                                                   TextWrapping="Wrap"
                                                   AcceptsReturn="True"
                                                   VerticalScrollBarVisibility="Auto"
-                                                    Text="{Binding Path=Content}"></TextBox>
+                                                    Text="{Binding Path=Content, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                                                 <Label>Tagline:</Label>
-                                                <TextBox Text="{Binding Path=Tagline}"></TextBox>
+                                                <TextBox Text="{Binding Path=Tagline, UpdateSourceTrigger=PropertyChanged}"></TextBox>
                                             </StackPanel>
                                             <Button HorizontalAlignment="Left" MinWidth="100" Margin="10, 2" Content="{Binding Path=ButtonText}" Command="{Binding Path=EditOrSaveNote, UpdateSourceTrigger=PropertyChanged}"></Button>
                                             <Separator></Separator>

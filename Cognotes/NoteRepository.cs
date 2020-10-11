@@ -8,16 +8,49 @@ using System.Data;
 
 namespace Cognotes
 {
-    public class NoteRepository
+    public class NoteRepository: IDisposable
     {
         public Action OnNoteSaved;
         string dbpath;
+        // HAX: We're going to assume that we'll never have enough
+        // cached note view models here that we'd need to evict
+        // them. 
+        Dictionary<long, NoteViewModel> viewCache;
         public NoteRepository(string dbpath)
         {
             this.dbpath = dbpath;
+            viewCache = new Dictionary<long, NoteViewModel>();
+        }
+        public void SaveOpenNotes() {
+            // Save any notes that have been left open by accident.
+            foreach (var nvm in viewCache.Values) {
+                if (nvm.IsEditing) {
+                    nvm.SaveNote();
+                }
+            }
+        }
+        public void Dispose()
+        {
+            SaveOpenNotes();
+        }
+        public IEnumerable<NoteViewModel> ViewNotesForSearch(string searchTerms)
+        {
+            foreach (Note n in SearchNotes(searchTerms))
+            {
+                NoteViewModel view;
+                if (viewCache.TryGetValue(n.Id.Value, out view)) {
+                    if (!view.IsEditing) {
+                        view.AssignNote(n);
+                    }
+                    // Don't refresh notes that haven't been saved yet.
+                } else {
+                    viewCache[n.Id.Value] = new NoteViewModel(n, this);
+                }
+                yield return viewCache[n.Id.Value];
+            }
         }
 
-        public IEnumerable<Note> SearchNotes(string searchTerms)
+        private IEnumerable<Note> SearchNotes(string searchTerms)
         {
             using(SQLiteConnection conn = new SQLiteConnection(dbpath))
             using (SQLiteCommand cmd = conn.CreateCommand()) {
@@ -49,6 +82,10 @@ namespace Cognotes
                     }
                 }
             }
+        }
+        public void NotifyChanges()
+        {
+            OnNoteSaved?.Invoke();
         }
 
         private T IfNull<T>(IDataReader dr, string Key, T fallback)
@@ -86,7 +123,6 @@ namespace Cognotes
                     cmd.Parameters.AddWithValue("@content", n.Content);
                     cmd.Parameters.AddWithValue("@tagline", n.Tagline);
                     cmd.Parameters.AddWithValue("@note_id", n.Id.Value);
-                    OnNoteSaved?.Invoke();
                     retval = (long)cmd.ExecuteScalar();
                 } else
                 {
@@ -101,7 +137,6 @@ namespace Cognotes
                     retval = (long)cmd.ExecuteScalar();
                 }
             }
-            OnNoteSaved?.Invoke();
             return retval;
         }
 

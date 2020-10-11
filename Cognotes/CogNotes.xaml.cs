@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Cognotes
 {
@@ -23,8 +24,13 @@ namespace Cognotes
         CogNotesViewModel vm;
         static string homeFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
         Cmd addNoteCol;
+        DispatcherTimer timerSaveDrafts;
+
         public CogNotesMainWindow()
         {
+            timerSaveDrafts = new DispatcherTimer();
+            timerSaveDrafts.Interval = TimeSpan.FromSeconds(30);
+
             db = new NoteRepository($@"Data Source={System.IO.Path.Combine(homeFolder, "cognotes.db")}");
             db.CreateTables();
             InitializeComponent();
@@ -36,11 +42,12 @@ namespace Cognotes
                 {
                     string[] elems = topic.Split('\x1f');
                     if (elems.Length != 2) { 
+                        // Read the new version
                         vm.AddNoteStream(new NoteStreamEditorViewModel(db, topic, addNoteCol, getRemoveCommand) {
                             SearchTerms = topic
                         });
-                    } else
-                    {
+                    } else {
+                        // Migrate up from old version.
                         vm.AddNoteStream(new NoteStreamEditorViewModel(db, elems[0], addNoteCol, getRemoveCommand) {
                             SearchTerms = elems[1]
                         });
@@ -61,6 +68,7 @@ namespace Cognotes
             File.WriteAllLines(
                 topicsPath(),
                 vm.NoteStreams.Select(x => x.Title + "\x1f" + x.SearchTerms));
+            db.Dispose();
         }
 
         private Cmd getRemoveCommand(NoteStreamEditorViewModel toRemove)

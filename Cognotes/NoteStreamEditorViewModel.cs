@@ -24,7 +24,24 @@ namespace Cognotes
 
         private void refreshNotes()
         {
-            SearchResults = searchNotes(db, searchTerms);
+            var openNotesIds = new HashSet<long?>(
+                searchResults
+                    .Where(x => x.IsEditing)
+                    .Select(x => x.Id));
+
+            var notesFromDb = searchNotes(db, searchTerms).ToDictionary(
+                x => x.Id,
+                x => x
+            );
+
+            var notesFromUI = searchResults.ToDictionary(
+                x => x.Id,
+                x => x
+            );
+
+
+
+            // SearchResults = searchNotes(db, searchTerms);
         }
 
 
@@ -38,12 +55,16 @@ namespace Cognotes
                 Tagline = DraftTagline,
             });
             DraftNotes = "";
+            refreshNotes();
+            db.OnNoteSaved -= refreshNotes;
+            db.NotifyChanges();
+            db.OnNoteSaved += refreshNotes;
         }
 
         private static ObservableCollection<NoteViewModel> searchNotes(NoteRepository db, string searchTerms)
         {
             return new ObservableCollection<NoteViewModel>(
-                db.SearchNotes(searchTerms).Select(n => new NoteViewModel(n, db)).Take(5)
+                db.ViewNotesForSearch(searchTerms).Take(5)
             );
         }
 

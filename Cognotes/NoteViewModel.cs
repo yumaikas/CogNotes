@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System;
+using System.Windows.Input;
 
 namespace Cognotes
 {
@@ -36,6 +37,34 @@ namespace Cognotes
             OnPropertyChanged("ButtonText");
         }
 
+        private Note lastSavedNote;
+        public void SaveNote() {
+            Note toSave = new Note()
+            {
+                Id = Id,
+                Content = Content,
+                Tagline = Tagline
+            };
+
+            if (lastSavedNote?.Id != null && lastSavedNote?.Id != toSave.Id)
+            {
+                var ex = new Exception("The id of this note, and the id of the last saved not do not match!");
+                ex.Data["MyId"] = Id;
+                ex.Data["LastSavedId"] = lastSavedNote?.Id;
+                throw ex;
+            }
+
+            // Save the notes if they are not identical
+            bool shouldSaveNote = 
+                !(lastSavedNote?.Id == toSave.Id
+                && lastSavedNote?.Content == toSave.Content
+                && lastSavedNote?.Tagline == toSave.Tagline);
+
+            if (shouldSaveNote) {
+                db.SaveNote(toSave);
+                lastSavedNote = toSave;
+            }
+        }
         private void editOrSaveNote()
         {
             if (is_editing)
@@ -54,6 +83,18 @@ namespace Cognotes
             }
         }
 
+        public void AssignNote(Note n)
+        {
+            if (n.Id != Id)
+            {
+                var ex = new Exception("Note ID and NoteViewModel ID do not match!");
+                ex.Data["NewNoteId"] = n.Id;
+                ex.Data["MyId"] = Id;
+                throw ex;
+            }
+            Content = n.Content;
+            Tagline = n.Tagline;
+        }
         public NoteViewModel(Note n, NoteRepository db)
         {
             EditOrSaveNote = new Cmd(

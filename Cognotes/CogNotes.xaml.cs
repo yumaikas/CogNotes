@@ -30,6 +30,8 @@ namespace Cognotes
         {
             timerSaveDrafts = new DispatcherTimer();
             timerSaveDrafts.Interval = TimeSpan.FromSeconds(30);
+            timerSaveDrafts.Tick += TimerSaveDrafts_Tick;
+            timerSaveDrafts.Start();
 
             db = new NoteRepository($@"Data Source={System.IO.Path.Combine(homeFolder, "cognotes.db")}");
             db.CreateTables();
@@ -61,6 +63,12 @@ namespace Cognotes
             }
             this.Closing += CogNotesMainWindow_Closing;
         }
+
+        private void TimerSaveDrafts_Tick(object sender, EventArgs e)
+        {
+            db.SaveOpenNotes();
+        }
+
         private string topicsPath() => System.IO.Path.Combine(homeFolder, ".cognos_topics.txt");
 
         private void CogNotesMainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)

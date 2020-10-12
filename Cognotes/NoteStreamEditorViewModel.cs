@@ -24,24 +24,7 @@ namespace Cognotes
 
         private void refreshNotes()
         {
-            var openNotesIds = new HashSet<long?>(
-                searchResults
-                    .Where(x => x.IsEditing)
-                    .Select(x => x.Id));
-
-            var notesFromDb = searchNotes(db, searchTerms).ToDictionary(
-                x => x.Id,
-                x => x
-            );
-
-            var notesFromUI = searchResults.ToDictionary(
-                x => x.Id,
-                x => x
-            );
-
-
-
-            // SearchResults = searchNotes(db, searchTerms);
+             SearchResults = searchNotes(db, searchTerms);
         }
 
 
